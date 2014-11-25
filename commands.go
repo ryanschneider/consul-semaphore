@@ -15,6 +15,12 @@ func init() {
 
 	Commands = map[string]cli.CommandFactory{
 
+		"init": func() (cli.Command, error) {
+			return &command.InitCommand{
+				Ui: ui,
+			}, nil
+		},
+
 		"acquire": func() (cli.Command, error) {
 			return &command.AcquireCommand{
 				Ui: ui,

@@ -1,4 +1,11 @@
 /*
+   Copyright 2014 Ryan Schneider
+   Modified version of https://github.com/coreos/locksmith/blob/master/lock/client.go
+   Changes:
+     - Added SetPath since consul-semaphore does not use a fixed semaphore path
+
+   Original license information follows
+
    Copyright 2014 CoreOS, Inc.
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,4 +27,6 @@ type LockClient interface {
 	Init() error
 	Get() (*Semaphore, error)
 	Set(*Semaphore) error
+
+	SetPath(string) error
 }
