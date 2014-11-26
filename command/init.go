@@ -1,6 +1,7 @@
 package command
 
 import (
+	"flag"
 	"fmt"
 	"strings"
 
@@ -9,19 +10,28 @@ import (
 )
 
 type InitCommand struct {
-	Ui cli.Ui
+	Ui   cli.Ui
+	Name string
 }
 
 func (c *InitCommand) Run(args []string) int {
-	client, err := getClient()
+	var max int
+	common, client, err := parseFlags(c.Name, c.Ui, args, func(f *flag.FlagSet) {
+		f.IntVar(&max, "max", 1, "maximum concurrent")
+	})
 	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error creating client: %s", err))
 		return 1
 	}
 
-	_, err = lock.New("TODO-semaphore", "TODO-holder", client)
+	l, err := lock.New(common.Semaphore, common.Holder, client)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating semaphore: %s", err))
+		return 1
+	}
+
+	_, _, err = l.SetMax(max)
+	if err != nil {
+		c.Ui.Error(fmt.Sprintf("Error setting maximum for semaphore: %s", err))
 		return 1
 	}
 	return 0
@@ -35,12 +45,13 @@ func (c *InitCommand) Help() string {
 	helpText := `
 Usage consul-semaphore init [options]
 
-  Initializes a unowned semaphore in Consul.
+	Initializes a unowned semaphore in Consul.
 
 Options:
 
-  -verbose                   Enables verbose output
+	-max                       Maximum concurrent, default 1
+%s
 	`
 
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, commonHelp()))
 }

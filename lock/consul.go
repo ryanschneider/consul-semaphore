@@ -90,9 +90,13 @@ func (c *ConsulLockClient) Set(sem *Semaphore) (err error) {
 
 	kv := c.client.KV()
 
-	_, _, err = kv.CAS(pair, nil)
+	written, _, err := kv.CAS(pair, nil)
 	if err != nil {
 		return err
+	}
+
+	if written != true {
+		return errors.New("Someone else modified the semaphore")
 	}
 
 	return nil

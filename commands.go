@@ -17,19 +17,22 @@ func init() {
 
 		"init": func() (cli.Command, error) {
 			return &command.InitCommand{
-				Ui: ui,
+				Ui:   ui,
+				Name: "init",
 			}, nil
 		},
 
 		"acquire": func() (cli.Command, error) {
 			return &command.AcquireCommand{
-				Ui: ui,
+				Ui:   ui,
+				Name: "acquire",
 			}, nil
 		},
 
 		"release": func() (cli.Command, error) {
 			return &command.ReleaseCommand{
-				Ui: ui,
+				Ui:   ui,
+				Name: "release",
 			}, nil
 		},
 
