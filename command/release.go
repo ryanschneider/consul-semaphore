@@ -15,15 +15,15 @@ type ReleaseCommand struct {
 }
 
 func (c *ReleaseCommand) Run(args []string) int {
-	common, client, err := parseFlags(c.Name, c.Ui, args, func(f *flag.FlagSet) {
+	common, err := parseFlags(c.Name, c.Ui, args, func(f *flag.FlagSet) {
 	})
 	if err != nil {
 		return 1
 	}
 
-	l, err := lock.New(common.Semaphore, common.Holder, client)
+	l, err := lock.New(common.Path, common.Holder, common.client)
 	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error creating semaphore: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
 		return 1
 	}
 
@@ -48,8 +48,8 @@ Usage consul-semaphore release [options]
 
 Options:
 
-  -verbose                   Enables verbose output
+%s
 	`
 
-	return strings.TrimSpace(helpText)
+	return strings.TrimSpace(fmt.Sprintf(helpText, commonHelp()))
 }

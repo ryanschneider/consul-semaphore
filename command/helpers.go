@@ -11,37 +11,39 @@ import (
 )
 
 type CommonFlags struct {
-	Consul    string
-	Semaphore string
-	Holder    string
-	Verbose   bool
+	Consul  string
+	Path    string
+	Holder  string
+	Verbose bool
+
+	flags  *flag.FlagSet
+	client *lock.ConsulLockClient
 }
 
-func parseFlags(name string, ui cli.Ui, args []string, setupFunc func(*flag.FlagSet)) (common *CommonFlags, client *lock.ConsulLockClient, err error) {
-	// Parse the flags and options
+func parseFlags(name string, ui cli.Ui, args []string, setupFunc func(*flag.FlagSet)) (common *CommonFlags, err error) {
 	common = new(CommonFlags)
 
 	// Parse the flags and options
-	flags := flag.NewFlagSet(name, flag.ContinueOnError)
+	common.flags = flag.NewFlagSet(name, flag.ContinueOnError)
 
-	flags.StringVar(&common.Consul, "consul", "127.0.0.1:8500",
+	common.flags.StringVar(&common.Consul, "consul", "127.0.0.1:8500",
 		"address of the Consul instance")
-	flags.StringVar(&common.Semaphore, "semaphore", "global/semaphore",
+	common.flags.StringVar(&common.Path, "path", "global/semaphore",
 		"KV path to the semaphore to use")
-	flags.StringVar(&common.Holder, "holder", "",
+	common.flags.StringVar(&common.Holder, "holder", "",
 		"the holder of the semaphore (default hostname)")
-	flags.BoolVar(&common.Verbose, "verbose", false, "enables verbose output")
+	common.flags.BoolVar(&common.Verbose, "verbose", false, "enables verbose output")
 
 	//call setupFunc if supplied
 	if setupFunc != nil {
-		setupFunc(flags)
+		setupFunc(common.flags)
 	}
 
 	// If there was a parser error, stop
 	if len(args) > 0 {
-		if err := flags.Parse(args); err != nil {
+		if err := common.flags.Parse(args); err != nil {
 			ui.Error(fmt.Sprintf("Error parsing flags: %s", err))
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -49,15 +51,15 @@ func parseFlags(name string, ui cli.Ui, args []string, setupFunc func(*flag.Flag
 		hostname, err := os.Hostname()
 		if err != nil {
 			ui.Error(fmt.Sprintf("Error determining hostname: %s", err))
-			return nil, nil, err
+			return nil, err
 		}
 
 		common.Holder = hostname
 	}
 
-	client, err = getClient(common)
+	common.client, err = getClient(common)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	return
@@ -75,7 +77,7 @@ func getClient(common *CommonFlags) (client *lock.ConsulLockClient, err error) {
 
 func commonHelp() string {
 	helpText := `
-	-semaphore                 KV path to the semaphore to use
+	-path                      KV path to the semaphore to use
 	-holder                    The name of the holder (defaults to hostname)
 	-consul                    Consul server to use, defaults to localhost
 	-verbose                   Enables verbose output
