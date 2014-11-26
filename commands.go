@@ -27,11 +27,13 @@ func init() {
 			}, nil
 		},
 
-		/*
-			"release": func() (cli.Command, error) {
-				return &command.ReleaseCommand{}, nil
-			},
+		"release": func() (cli.Command, error) {
+			return &command.ReleaseCommand{
+				Ui: ui,
+			}, nil
+		},
 
+		/*
 			"exec": func() (cli.Command, error) {
 				return &command.ExecCommand{}, nil
 			},
