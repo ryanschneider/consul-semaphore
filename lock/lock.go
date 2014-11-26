@@ -3,6 +3,7 @@
    Modified version of https://github.com/coreos/locksmith/blob/master/lock/lock.go
    Changes:
      - Added Path since consul-semaphore does not use a fixed semaphore path
+     - Added Watch() to prevent polling the lock
 
    Original license information follows
 
@@ -89,4 +90,13 @@ func (l *Lock) Unlock() error {
 	return l.store(func(sem *Semaphore) error {
 		return sem.Unlock(l.id)
 	})
+}
+
+func (l *Lock) Watch() (changed bool, err error) {
+	sem, err := l.client.Get()
+	if err != nil {
+		return false, err
+	}
+
+	return l.client.Watch(sem)
 }

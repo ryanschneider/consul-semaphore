@@ -3,6 +3,7 @@
    Modified version of https://github.com/coreos/locksmith/blob/master/lock/client.go
    Changes:
      - Added SetPath since consul-semaphore does not use a fixed semaphore path
+     - Added Watch to prevent polling the semaphore sotrage
 
    Original license information follows
 
@@ -29,4 +30,5 @@ type LockClient interface {
 	Set(*Semaphore) error
 
 	SetPath(string) error
+	Watch(*Semaphore) (bool, error)
 }

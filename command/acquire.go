@@ -29,10 +29,32 @@ func (c *AcquireCommand) Run(args []string) int {
 		return 1
 	}
 
-	err = l.Lock()
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error locking semaphore: %s", err))
-		return 1
+	retry := true
+	for retry {
+		retry = false
+		err = l.Lock()
+		if err != nil {
+			// only go again if we are waiting
+			if retry = wait; retry {
+				_, isExhausted := err.(lock.SemaphoreExhaustedErr)
+				casFailed := err == lock.CheckAndSetFailedErr
+
+				if isExhausted || casFailed {
+					changed, err := l.Watch()
+					if err != nil {
+						break
+					}
+					if changed {
+						// TODO: add some random sleep here to avoid
+						// too many CAS errors on thundering herd
+						continue
+					}
+				}
+			}
+
+			c.Ui.Error(fmt.Sprintf("Error locking semaphore: %s", err))
+			return 1
+		}
 	}
 
 	return 0

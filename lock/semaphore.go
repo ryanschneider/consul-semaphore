@@ -1,4 +1,11 @@
 /*
+   Copyright 2014 Ryan Schneider
+   Modified version of https://github.com/coreos/locksmith/blob/master/lock/semaphore.go
+   Changes:
+     - Added error types to determine if semapore is exhausted
+
+   Original license information follows
+
    Copyright 2014 CoreOS, Inc.
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +34,12 @@ var (
 	ErrExist    = errors.New("holder exists")
 	ErrNotExist = errors.New("holder does not exist")
 )
+
+type SemaphoreExhaustedErr int
+
+func (i SemaphoreExhaustedErr) Error() string {
+	return fmt.Sprintf("semaphore exhausted at count: %v", int(i))
+}
 
 type Semaphore struct {
 	Index     uint64   `json:"-"`
@@ -74,9 +87,23 @@ func (s *Semaphore) removeHolder(h string) error {
 	return nil
 }
 
+func (s *Semaphore) findHolder(h string) (found bool) {
+	loc := sort.SearchStrings(s.Holders, h)
+	if loc < len(s.Holders) && s.Holders[loc] == h {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (s *Semaphore) Lock(h string) error {
 	if s.Semaphore <= 0 {
-		return fmt.Errorf("semaphore is at %v", s.Semaphore)
+		if s.findHolder(h) {
+			// we consider re-acuring a lock for the same holder
+			// an error
+			return ErrExist
+		}
+		return SemaphoreExhaustedErr(s.Semaphore)
 	}
 
 	if err := s.addHolder(h); err != nil {

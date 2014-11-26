@@ -11,6 +11,10 @@ import (
 	api "github.com/armon/consul-api"
 )
 
+var (
+	CheckAndSetFailedErr = errors.New("Someone else modified the semaphore")
+)
+
 // ConsulLockClient is a wrapper around the consul-api client
 // that provides simple primitives to operate on a named semaphore
 // stored as a Consul KV.
@@ -96,8 +100,13 @@ func (c *ConsulLockClient) Set(sem *Semaphore) (err error) {
 	}
 
 	if written != true {
-		return errors.New("Someone else modified the semaphore")
+		return CheckAndSetFailedErr
 	}
 
 	return nil
+}
+
+func (c *ConsulLockClient) Watch(sem *Semaphore) (changed bool, err error) {
+	// naive first pass, doesn't stop anything
+	return true, nil
 }
