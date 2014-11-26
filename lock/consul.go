@@ -109,4 +109,16 @@ func (c *ConsulLockClient) Set(sem *Semaphore) (err error) {
 func (c *ConsulLockClient) Watch(sem *Semaphore) (changed bool, err error) {
 	// naive first pass, doesn't stop anything
 	return true, nil
+	/*
+		kv := c.client.KV()
+		qo := &api.QueryOptions{
+			AllowStale:        false,
+			RequireConsistent: true,
+			WaitIndex:         sem.Index,
+		}
+		changed, meta, err := kv.Get(c.Path, qo)
+		if err != nil {
+			return false, err
+		}
+	*/
 }
