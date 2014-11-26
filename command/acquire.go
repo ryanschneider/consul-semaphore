@@ -16,14 +16,14 @@ type AcquireCommand struct {
 
 func (c *AcquireCommand) Run(args []string) int {
 	var wait bool
-	common, err := parseFlags(c.Name, c.Ui, args, func(f *flag.FlagSet) {
+	helper, err := newCommandHelper(c.Name, c.Ui, args, func(f *flag.FlagSet) {
 		f.BoolVar(&wait, "wait", false, "wait for semaphore if blocked")
 	})
 	if err != nil {
 		return 1
 	}
 
-	l, err := lock.New(common.Path, common.Holder, common.client)
+	l, err := lock.New(helper.Path, helper.Holder, helper.client)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
 		return 1

@@ -16,14 +16,14 @@ type InitCommand struct {
 
 func (c *InitCommand) Run(args []string) int {
 	var max int
-	common, err := parseFlags(c.Name, c.Ui, args, func(f *flag.FlagSet) {
+	helper, err := newCommandHelper(c.Name, c.Ui, args, func(f *flag.FlagSet) {
 		f.IntVar(&max, "max", 1, "maximum concurrent")
 	})
 	if err != nil {
 		return 1
 	}
 
-	l, err := lock.New(common.Path, common.Holder, common.client)
+	l, err := lock.New(helper.Path, helper.Holder, helper.client)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error creating semaphore: %s", err))
 		return 1

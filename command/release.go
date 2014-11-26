@@ -1,7 +1,6 @@
 package command
 
 import (
-	"flag"
 	"fmt"
 	"strings"
 
@@ -15,13 +14,12 @@ type ReleaseCommand struct {
 }
 
 func (c *ReleaseCommand) Run(args []string) int {
-	common, err := parseFlags(c.Name, c.Ui, args, func(f *flag.FlagSet) {
-	})
+	helper, err := newCommandHelper(c.Name, c.Ui, args, nil)
 	if err != nil {
 		return 1
 	}
 
-	l, err := lock.New(common.Path, common.Holder, common.client)
+	l, err := lock.New(helper.Path, helper.Holder, helper.client)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
 		return 1
