@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/cli"
-	"github.com/ryanschneider/consul-semaphore/lock"
+	"github.com/ryanschneider/consul-semaphore/semaphore"
 )
 
 type ReleaseCommand struct {
@@ -14,18 +14,18 @@ type ReleaseCommand struct {
 }
 
 func (c *ReleaseCommand) Run(args []string) int {
-	helper, err := newCommandHelper(c.Name, c.Ui, args, nil)
+	helper, err := newParser(c.Name, args, nil)
 	if err != nil {
 		return 1
 	}
 
-	l, err := lock.New(helper.Path, helper.Holder, helper.client)
+	sem, err := semaphore.New(helper.Path, helper.Holder)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
 		return 1
 	}
 
-	err = l.Unlock()
+	err = sem.Release()
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error releasing semaphore: %s", err))
 		return 1

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/cli"
-	"github.com/ryanschneider/consul-semaphore/lock"
+	"github.com/ryanschneider/consul-semaphore/semaphore"
 )
 
 type InitCommand struct {
@@ -16,23 +16,30 @@ type InitCommand struct {
 
 func (c *InitCommand) Run(args []string) int {
 	var max int
-	helper, err := newCommandHelper(c.Name, c.Ui, args, func(f *flag.FlagSet) {
-		f.IntVar(&max, "max", 1, "maximum concurrent")
+	helper, err := newParser(c.Name, args, func(f *flag.FlagSet) {
+		f.IntVar(&max, "max", -0xdefa, "maximum concurrent")
 	})
 	if err != nil {
 		return 1
 	}
 
-	l, err := lock.New(helper.Path, helper.Holder, helper.client)
-	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error creating semaphore: %s", err))
+	if max < 0 && max != -0xdefa {
+		c.Ui.Error(fmt.Sprintf("Max must be a positive integer: %v", max))
 		return 1
 	}
 
-	_, _, err = l.SetMax(max)
+	sem, err := semaphore.New(helper.Path, helper.Holder)
 	if err != nil {
-		c.Ui.Error(fmt.Sprintf("Error setting maximum for semaphore: %s", err))
+		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
 		return 1
+	}
+
+	if max > 0 {
+		_, err = sem.SetMax(uint(max))
+		if err != nil {
+			c.Ui.Error(fmt.Sprintf("Error setting maximum for semaphore: %s", err))
+			return 1
+		}
 	}
 	return 0
 }

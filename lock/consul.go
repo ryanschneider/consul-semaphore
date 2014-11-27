@@ -100,6 +100,8 @@ func (c *ConsulLockClient) Set(sem *Semaphore) (err error) {
 	}
 
 	if written != true {
+		// TODO: Should I handle CAS errors in .Set()?
+		// Makes the API cleaner, but makes Set potentially blocking
 		return CheckAndSetFailedErr
 	}
 
