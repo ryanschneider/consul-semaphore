@@ -64,7 +64,11 @@ func (c *ConsulLockClient) Init() (err error) {
 
 func (c *ConsulLockClient) Get() (sem *Semaphore, err error) {
 	kv := c.client.KV()
-	pair, _, err := kv.Get(c.Path, nil)
+	qo := &api.QueryOptions{
+		AllowStale:        false,
+		RequireConsistent: true,
+	}
+	pair, _, err := kv.Get(c.Path, qo)
 	if err != nil {
 		return nil, err
 	}
@@ -109,18 +113,30 @@ func (c *ConsulLockClient) Set(sem *Semaphore) (err error) {
 }
 
 func (c *ConsulLockClient) Watch(sem *Semaphore) (changed bool, err error) {
-	// naive first pass, doesn't stop anything
-	return true, nil
-	/*
-		kv := c.client.KV()
-		qo := &api.QueryOptions{
-			AllowStale:        false,
-			RequireConsistent: true,
-			WaitIndex:         sem.Index,
-		}
-		changed, meta, err := kv.Get(c.Path, qo)
-		if err != nil {
-			return false, err
-		}
-	*/
+
+	kv := c.client.KV()
+	qo := &api.QueryOptions{
+		AllowStale:        false,
+		RequireConsistent: true,
+		WaitIndex:         sem.Index,
+	}
+	pair, meta, err := kv.Get(c.Path, qo)
+	if err != nil {
+		return true, err
+	}
+
+	if meta == nil {
+		return true, errors.New("Returned with nil metadata, see https://github.com/hashicorp/consul-template/issues/72")
+	}
+
+	changed = meta.LastIndex == sem.Index
+
+	// NOTE: modifies input argument..
+	err = json.Unmarshal([]byte(pair.Value), sem)
+	if err != nil {
+		return true, err
+	}
+
+	sem.Index = pair.ModifyIndex
+	return
 }

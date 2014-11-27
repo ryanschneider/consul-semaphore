@@ -3,6 +3,7 @@ package semaphore
 import (
 	api "github.com/armon/consul-api"
 	lock "github.com/ryanschneider/consul-semaphore/lock"
+	"log"
 )
 
 type Semaphore struct {
@@ -40,30 +41,39 @@ func (s *Semaphore) SetMax(max uint) (oldMax uint, err error) {
 }
 
 func (s *Semaphore) Acquire(wait bool) (err error) {
-	retry := true
-	for retry {
-		retry = false
+	for {
 		err = s.lock.Lock()
+		if err == nil {
+			return nil
+		}
+
+		// only go again if we are waiting
+		if !wait {
+			return err
+		}
+
+		_, isExhausted := err.(lock.SemaphoreExhaustedErr)
+		casFailed := (err == lock.CheckAndSetFailedErr)
+
+		switch {
+		case isExhausted:
+			log.Printf("Exhausted, trying again")
+		case casFailed:
+			log.Printf("CAS failed, trying again")
+		default:
+			return err
+		}
+
+		changed, err := s.lock.Watch()
 		if err != nil {
-			// only go again if we are waiting
-			if retry = wait; retry {
-				_, isExhausted := err.(lock.SemaphoreExhaustedErr)
-				casFailed := err == lock.CheckAndSetFailedErr
+			return err
+		}
 
-				if isExhausted || casFailed {
-					changed, err := s.lock.Watch()
-					if err != nil {
-						return err
-					}
-					if changed {
-						// TODO: add some random sleep here to avoid
-						// too many CAS errors on thundering herd
-						continue
-					}
-				}
-
-				return err
-			}
+		log.Printf("Watch woke up, changed: %v", changed)
+		if changed {
+			// TODO: add some random sleep here to avoid
+			// too many CAS errors on thundering herd
+			continue
 		}
 	}
 
