@@ -1,9 +1,10 @@
 package semaphore
 
 import (
+	"log"
+
 	api "github.com/armon/consul-api"
 	lock "github.com/ryanschneider/consul-semaphore/lock"
-	"log"
 )
 
 type Semaphore struct {

@@ -8,6 +8,7 @@ package lock
 import (
 	"encoding/json"
 	"errors"
+
 	api "github.com/armon/consul-api"
 )
 
