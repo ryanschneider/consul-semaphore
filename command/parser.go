@@ -60,7 +60,7 @@ func commonHelp() string {
 	-holder                    The name of the holder (defaults to hostname)
 	-consul                    Consul server to use, defaults to localhost:8500
 	-verbose                   Enables verbose output
-	`
+`
 
 	return helpText[1 : len(helpText)-1]
 }

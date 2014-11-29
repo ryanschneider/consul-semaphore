@@ -22,6 +22,14 @@ func (c *ExecCommand) Run(args []string) (ret int) {
 		return 1
 	}
 
+	remainingArgs := parser.flags.Args()
+	if len(remainingArgs) == 0 {
+		c.Ui.Error("Error: No command to execute given")
+		c.Ui.Error("")
+		c.Ui.Error(c.Help())
+		return 1
+	}
+
 	sem, err := semaphore.New(parser.Path, parser.Holder)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
@@ -44,7 +52,7 @@ func (c *ExecCommand) Run(args []string) (ret int) {
 	}()
 
 	//execute the command
-	err = c.execute(parser.flags.Args()...)
+	err = c.execute(remainingArgs...)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error executing command: %s", err))
 		return 1
@@ -75,13 +83,14 @@ func (c *ExecCommand) Synopsis() string {
 
 func (c *ExecCommand) Help() string {
 	helpText := `
-Usage consul-semaphore exec [options]
+Usage consul-semaphore exec [options] <command> [args...]
 
-  Executes a command, wrapped in a consul semaphore.
+  Executes command, wrapped in a consul semaphore.
 
 Options:
 
 %s
+	--                         Stop parsing args, next arg is command
 	`
 
 	return strings.TrimSpace(fmt.Sprintf(helpText, commonHelp()))
