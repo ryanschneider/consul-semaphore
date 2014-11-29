@@ -14,12 +14,12 @@ type ReleaseCommand struct {
 }
 
 func (c *ReleaseCommand) Run(args []string) int {
-	helper, err := newParser(c.Name, args, nil)
+	parser, err := newParser(c.Name, args, nil)
 	if err != nil {
 		return 1
 	}
 
-	sem, err := semaphore.New(helper.Path, helper.Holder)
+	sem, err := semaphore.New(parser.Path, parser.Holder)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
 		return 1

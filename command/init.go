@@ -16,7 +16,7 @@ type InitCommand struct {
 
 func (c *InitCommand) Run(args []string) int {
 	var max int
-	helper, err := newParser(c.Name, args, func(f *flag.FlagSet) {
+	parser, err := newParser(c.Name, args, func(f *flag.FlagSet) {
 		f.IntVar(&max, "max", -0xdefa, "maximum concurrent")
 	})
 	if err != nil {
@@ -28,7 +28,7 @@ func (c *InitCommand) Run(args []string) int {
 		return 1
 	}
 
-	sem, err := semaphore.New(helper.Path, helper.Holder)
+	sem, err := semaphore.New(parser.Path, parser.Holder)
 	if err != nil {
 		c.Ui.Error(fmt.Sprintf("Error initializing semaphore: %s", err))
 		return 1
