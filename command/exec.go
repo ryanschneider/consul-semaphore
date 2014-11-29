@@ -10,6 +10,7 @@ import (
 	"github.com/ryanschneider/consul-semaphore/semaphore"
 )
 
+// ExecCommand handles cthe "exec" action
 type ExecCommand struct {
 	Ui   cli.Ui
 	Name string
@@ -61,8 +62,7 @@ func (c *ExecCommand) Run(args []string) (ret int) {
 	return 0
 }
 
-// execute accepts a command string and runs that command string on the current
-// system.
+// execute accepts a args list and runs a command
 func (c *ExecCommand) execute(args ...string) error {
 	// Create and invoke the command
 	cmd := exec.Command(args[0], args[1:]...)
@@ -96,7 +96,7 @@ Options:
 	return strings.TrimSpace(fmt.Sprintf(helpText, commonHelp()))
 }
 
-/// Used to coerce my coroutines into Writers
+/// WriterFunc is used to coerce Ui.Output() into the Writer interface.
 type WriterFunc func(p []byte) (n int, err error)
 
 func (wf WriterFunc) Write(p []byte) (n int, err error) {
