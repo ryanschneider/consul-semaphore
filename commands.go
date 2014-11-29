@@ -11,7 +11,10 @@ import (
 var Commands map[string]cli.CommandFactory
 
 func init() {
-	ui := &cli.BasicUi{Writer: os.Stdout}
+	ui := &cli.BasicUi{
+		Writer:      os.Stdout,
+		ErrorWriter: os.Stderr,
+	}
 
 	Commands = map[string]cli.CommandFactory{
 
@@ -36,11 +39,12 @@ func init() {
 			}, nil
 		},
 
-		/*
-			"exec": func() (cli.Command, error) {
-				return &command.ExecCommand{}, nil
-			},
-		*/
+		"exec": func() (cli.Command, error) {
+			return &command.ExecCommand{
+				Ui:   ui,
+				Name: "exec",
+			}, nil
+		},
 
 		"version": func() (cli.Command, error) {
 			ver := Version
