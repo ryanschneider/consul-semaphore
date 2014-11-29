@@ -13,8 +13,9 @@ import (
 // a Consul KV.  For exmple, restarting services in a consul-template
 // action in a controlled manner.
 type Semaphore struct {
-	Path string
-	lock *lock.Lock
+	Path   string
+	Holder string
+	lock   *lock.Lock
 }
 
 // New creates and returns a new Semaphore.
@@ -34,7 +35,7 @@ func New(path string, holder string) (s *Semaphore, err error) {
 		return nil, err
 	}
 
-	return &Semaphore{path, lock}, nil
+	return &Semaphore{path, holder, lock}, nil
 }
 
 // SetMax sets the maximum number of concurrent holders of a Semaphore.
