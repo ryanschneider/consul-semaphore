@@ -2,6 +2,8 @@ package semaphore
 
 import (
 	"log"
+	"math/rand"
+	"time"
 
 	api "github.com/armon/consul-api"
 	lock "github.com/ryanschneider/consul-semaphore/lock"
@@ -56,6 +58,7 @@ func (s *Semaphore) SetMax(max uint) (oldMax uint, err error) {
 // Semaphore is currently maxed out.
 func (s *Semaphore) Acquire(wait bool) (err error) {
 	for {
+		log.Printf("Holder %v: acquiring..", s.Holder)
 		err = s.lock.Lock()
 		if err == nil {
 			return nil
@@ -71,9 +74,9 @@ func (s *Semaphore) Acquire(wait bool) (err error) {
 
 		switch {
 		case isExhausted:
-			log.Printf("Exhausted, trying again")
+			log.Printf("Holder %v: Semaphore exhausted, trying again", s.Holder)
 		case casFailed:
-			log.Printf("CAS failed, trying again")
+			log.Printf("Holder %v: CheckAndSet failed, trying again", s.Holder)
 		default:
 			return err
 		}
@@ -83,10 +86,11 @@ func (s *Semaphore) Acquire(wait bool) (err error) {
 			return err
 		}
 
-		log.Printf("Watch woke up, changed: %v", changed)
+		log.Printf("Holder %v: Watch woke up, changed: %v", s.Holder, changed)
 		if changed {
-			// TODO: add some random sleep here to avoid
-			// too many CAS errors on thundering herd
+			// Sleep here to avoid too many CAS errors on thundering herd
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			time.Sleep(time.Duration(r.Intn(1000)) * time.Millisecond)
 			continue
 		}
 	}
@@ -103,8 +107,9 @@ func (s *Semaphore) Release() (err error) {
 	for {
 		err = s.lock.Unlock()
 		if err == lock.CheckAndSetFailedErr {
-			// TODO: add some sleep here to avoid
-			// too many CAS errors on thundering herd
+			// Sleep here to avoid too many CAS errors on thundering herd
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			time.Sleep(time.Duration(r.Intn(1000)) * time.Millisecond)
 			continue
 		}
 		return
