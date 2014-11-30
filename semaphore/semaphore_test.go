@@ -2,6 +2,8 @@ package semaphore
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"sync"
 	"testing"
 )
@@ -85,13 +87,15 @@ func TestAcquireWait(t *testing.T) {
 func BenchmarkContention(b *testing.B) {
 	const (
 		path  = "tests/integration/semaphore/BenchmarkContention"
-		count = 9
-		max   = 2
+		count = 20
+		max   = 1
 	)
+
+	log.SetOutput(ioutil.Discard)
 
 	for x := 0; x < b.N; x++ {
 
-		sem, err := New(path, ".")
+		sem, err := New(path, "INITIAL")
 		if err != nil {
 			b.Error(err)
 		}
@@ -103,7 +107,7 @@ func BenchmarkContention(b *testing.B) {
 
 		sems := make([]*Semaphore, 0, count)
 		for i := 0; i < count; i++ {
-			s, err := New(path, fmt.Sprintf("holder-%v", i))
+			s, err := New(path, fmt.Sprintf("CONTENDER-%v", i))
 			if err != nil {
 				b.Error(err)
 			}
@@ -114,6 +118,8 @@ func BenchmarkContention(b *testing.B) {
 		if err != nil {
 			b.Error(fmt.Sprintf("Error acquiring for holder %v: %v", sem.Holder, err))
 		}
+
+		b.Log(fmt.Sprintf("Holder %v acquired", sem.Holder))
 
 		wg := sync.WaitGroup{}
 
@@ -126,27 +132,40 @@ func BenchmarkContention(b *testing.B) {
 				ea := s.Acquire(true)
 				if ea != nil {
 					b.Error(fmt.Sprintf("Error acquiring for holder %v: %v", s.Holder, ea))
-					b.FailNow()
+					return
 				}
+
+				b.Log(fmt.Sprintf("Holder %v acquired, releasing", s.Holder))
 
 				er := s.Release()
 				if er != nil {
 					b.Error(fmt.Sprintf("Error releasing for holder %v: %v", s.Holder, er))
-					b.FailNow()
+					return
 				}
 			}(s)
 		}
+
+		b.Log(fmt.Sprintf("Holder %v ...", sem.Holder))
 
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
+			b.Log(fmt.Sprintf("Holder %v releasing", sem.Holder))
+
 			er := sem.Release()
 			if er != nil {
 				b.Error(fmt.Sprintf("Error releasing for holder %v: %v", sem.Holder, er))
-				b.FailNow()
+				return
 			}
 		}()
+
+		/*
+			go func() {
+				time.Sleep(15 * time.Second)
+				panic(fmt.Sprintf("Still waiting %v!", wg))
+			}()
+		*/
 
 		wg.Wait()
 	}
