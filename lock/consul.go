@@ -130,7 +130,7 @@ func (c *ConsulLockClient) Watch(sem *Semaphore) (changed bool, err error) {
 		return true, errors.New("Returned with nil metadata, see https://github.com/hashicorp/consul-template/issues/72")
 	}
 
-	changed = meta.LastIndex == sem.Index
+	changed = meta.LastIndex != sem.Index
 
 	// NOTE: modifies input argument..
 	err = json.Unmarshal([]byte(pair.Value), sem)
